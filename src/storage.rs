@@ -1,27 +1,22 @@
-// This module handles file I/O.
-// Its job:
-// save the whole app state to disk
-// load the whole app state from disk
-// parse text file lines into data
-// convert data into lines to write
-// This is where you will practice:
-// std::fs
-// read_to_string
-// opening/writing files
-// parsing strings
-// handling malformed input
-// This module should not ask the user anything.
+use crate::app::App;
+use anyhow::{Context, Result};
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 
-// You should probably have functions whose purposes are:
-// save the app to a path
-// load the app from a path
-// convert one habit into one text line
-// parse one habit from one text line
-// convert one journal entry into one text line
-// parse one journal entry from one text line
+pub fn save_data(app: App) -> Result<()> {
+    let path = "app_data.json";
+    let file = File::create(path)?;
+    let writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, &app)?;
+    Ok(())
+}
 
-// Test things like:
-// serialize one habit line
-// parse one valid line
-// reject one malformed line
-// round-trip: save then parse back into the same data
+pub fn load_data() -> Result<App> {
+    let path = "app_data.json";
+    let file =
+        File::open(path).with_context(|| format!("Failed to open app data file at {}", path))?;
+    let reader = BufReader::new(file);
+    let app: App = serde_json::from_reader(reader)
+        .context("Failed to parse the JSON data into the App struct")?;
+    Ok(app)
+}

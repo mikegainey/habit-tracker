@@ -1,19 +1,21 @@
-#![allow(unused_mut)]
-// call into ui, app, and storage
-// handle top-level errors
-
 pub mod app;
 pub mod commands;
-pub mod error;
 pub mod habit;
-pub mod journal;
 pub mod storage;
 pub mod ui;
 
+use anyhow::Context;
 use app::App;
 
-fn main() {
-    let mut app = App::new();
+fn main() -> anyhow::Result<()> {
+    // load data from app_date.json, otherwise, create a new App
+    let mut app = match storage::load_data() {
+        Ok(app) => app,
+        Err(err) => {
+            eprintln!("\nNotice: Starting with a fresh database (Reason: {})", err);
+            App::new()
+        }
+    };
 
     loop {
         ui::list_habits(&app);
@@ -21,8 +23,17 @@ fn main() {
         ui::show_menu();
 
         // get the user's menu choice
-        let item = ui::get_input("> ");
+        let item = ui::input("> ");
+
+        if item == "q" {
+            break;
+        }
 
         commands::do_command(&mut app, &item);
     }
+
+    // save data to a file
+    storage::save_data(app).context("Error: could not save app data")?;
+
+    Ok(())
 }
