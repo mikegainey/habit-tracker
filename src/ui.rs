@@ -1,34 +1,58 @@
 use crate::app::App;
 use crate::commands::COMMANDS;
+use crate::helper;
+use colored::Colorize;
 use std::io::{self, Write};
-use time::{Date, OffsetDateTime};
 
 pub fn list_habits(app: &App) {
-    println!("\n\nHabits done today:");
-    let today = today();
+    println!("\n{}", "===== List of Habits =====".cyan());
+    println!("{}", "Done today:".cyan());
+    let today = helper::today();
+    let mut count = 0;
     for (number, habit) in app.get_habits().iter().enumerate() {
         if habit.done_today() {
+            count += 1;
+            let streak = habit.ending_streak();
+            let last30days = habit.last_30_days();
             println!(
-                "{}) {} (time: {})",
+                "{}) {:30}  (streak: {})  (last 30 days: {})  (time: {})",
                 number + 1,
                 habit,
-                habit.list_times(today)
+                streak,
+                last30days,
+                habit.list_times(today),
+            );
+        }
+    }
+    if count == 0 {
+        println!("(none)");
+    }
+    println!("\n{}", "Not done today:".cyan());
+    let mut count = 0;
+    for (number, habit) in app.get_habits().iter().enumerate() {
+        if !habit.done_today() {
+            count += 1;
+            let streak = habit.ending_streak();
+            let last30days = habit.last_30_days();
+            println!(
+                "{}) {:30}  (streak: {})  (last 30 days: {})",
+                number + 1,
+                habit,
+                streak,
+                last30days
             )
         }
     }
-    println!("\nNot done today:");
-    for (number, habit) in app.get_habits().iter().enumerate() {
-        if !habit.done_today() {
-            println!("{}) {}", number + 1, habit)
-        }
+    if count == 0 {
+        println!("(none)");
     }
-    println!();
+    println!("{}", "==========================".cyan());
 }
 
 pub fn show_menu() {
     println!("\nWhat do you want to do?");
-    for (item, command) in COMMANDS {
-        println!("{}) {}", item, command);
+    for cmd in COMMANDS {
+        println!("{}) {}", cmd.key, cmd.desc);
     }
     println!("q) Quit this program");
     println!();
@@ -36,12 +60,12 @@ pub fn show_menu() {
 
 pub fn input(prompt: &str) -> String {
     print!("{}", prompt);
-    io::stdout().flush().unwrap();
+    io::stdout().flush().unwrap(); // this unwrap is okay
 
     let mut input = String::new();
     io::stdin()
         .read_line(&mut input)
-        .expect("Failed to read line");
+        .expect("Failed to read line"); // this expect is okay
     let input = input.trim().to_string();
     input
 }
@@ -58,8 +82,4 @@ where
             Err(e) => println!("Invalid input: {}", e),
         }
     }
-}
-
-pub fn today() -> Date {
-    OffsetDateTime::now_local().unwrap().date()
 }

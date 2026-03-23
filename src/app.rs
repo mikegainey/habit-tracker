@@ -11,8 +11,12 @@ impl App {
         App { habits: Vec::new() }
     }
 
-    pub fn get_habits(&self) -> &Vec<Habit> {
+    pub fn get_habits(&self) -> &[Habit] {
         &self.habits
+    }
+
+    pub fn get_mut_habits(&mut self) -> &mut Vec<Habit> {
+        &mut self.habits
     }
 
     pub fn add_habit(&mut self, habit: Habit) {

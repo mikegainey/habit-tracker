@@ -1,7 +1,7 @@
-use crate::ui;
+use crate::helper;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use time::{Date, OffsetDateTime, macros::format_description};
+use time::{Date, Duration, OffsetDateTime, macros::format_description};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Habit {
@@ -28,7 +28,7 @@ impl Habit {
     }
 
     pub fn done_today(&self) -> bool {
-        let today = ui::today();
+        let today = helper::today();
         self.check_date(today)
     }
 
@@ -36,7 +36,7 @@ impl Habit {
         self.name = new_name
     }
 
-    pub fn get_timestamps(&self) -> &Vec<OffsetDateTime> {
+    pub fn get_timestamps(&self) -> &[OffsetDateTime] {
         &self.timestamps
     }
 
@@ -45,7 +45,7 @@ impl Habit {
         self.timestamps
             .iter()
             .filter(|&odt| odt.date() == date)
-            .map(|odt| odt.format(&format).expect("failed to format time"))
+            .map(|d| d.format(&format).unwrap_or("unknown".to_string()))
             .collect::<Vec<_>>()
             .join(", ")
     }
@@ -53,10 +53,52 @@ impl Habit {
     pub fn total_completions(&self) -> u16 {
         self.timestamps.len() as u16
     }
+
+    pub fn ending_streak(&self) -> usize {
+        let timestamps = &self.timestamps;
+        if timestamps.is_empty() {
+            return 0;
+        }
+
+        // 1. Prepare the data
+        let mut dates: Vec<Date> = timestamps.iter().map(|dt| dt.date()).collect();
+        dates.dedup();
+
+        // 2. Identify our anchor points
+        let today = helper::today();
+        let yesterday = today - Duration::DAY;
+
+        // 3. Determine the starting point of the walk
+        // The streak is active if the most recent entry is Today OR Yesterday.
+        let mut current_check = if dates.contains(&today) {
+            today
+        } else if dates.contains(&yesterday) {
+            yesterday
+        } else {
+            // If the last entry was 2+ days ago, the streak is broken.
+            return 0;
+        };
+
+        // 4. Walk backward through the calendar
+        let mut count = 0;
+        while dates.contains(&current_check) {
+            count += 1;
+            current_check -= Duration::DAY;
+        }
+
+        count
+    }
+
+    // this function should be tested
+    pub fn last_30_days(&self) -> usize {
+        let timestamps = &self.timestamps;
+        let month_ago: Date = helper::today() - Duration::DAY * 30;
+        timestamps.iter().filter(|dt| dt.date() > month_ago).count() // should it be >= ?
+    }
 }
 
 impl fmt::Display for Habit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
+        f.pad(&self.name)
     }
 }

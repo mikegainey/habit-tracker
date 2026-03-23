@@ -1,6 +1,7 @@
 pub mod app;
 pub mod commands;
 pub mod habit;
+pub mod helper;
 pub mod storage;
 pub mod ui;
 
