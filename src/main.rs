@@ -19,18 +19,19 @@ fn main() -> anyhow::Result<()> {
     };
 
     loop {
+        ui::clear_screen();
         ui::list_habits(&app);
 
         ui::show_menu();
 
         // get the user's menu choice
-        let item = ui::input("> ");
+        let item = ui::input("> ")?;
 
         if item == "q" {
             break;
         }
 
-        commands::do_command(&mut app, &item);
+        commands::do_command(&mut app, &item)?;
     }
 
     // save data to a file
