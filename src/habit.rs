@@ -36,9 +36,10 @@ impl Habit {
         self.name = new_name
     }
 
-    pub fn get_timestamps(&self) -> &[OffsetDateTime] {
-        &self.timestamps
-    }
+    // not used
+    // pub fn get_timestamps(&self) -> &[OffsetDateTime] {
+    //     &self.timestamps
+    // }
 
     pub fn list_times(&self, date: Date) -> String {
         let format = format_description!("[hour]:[minute]");
@@ -50,18 +51,18 @@ impl Habit {
             .join(", ")
     }
 
-    pub fn total_completions(&self) -> u16 {
-        self.timestamps.len() as u16
-    }
+    // not used
+    // pub fn total_completions(&self) -> u16 {
+    //     self.timestamps.len() as u16
+    // }
 
     pub fn ending_streak(&self) -> usize {
-        let timestamps = &self.timestamps;
-        if timestamps.is_empty() {
+        if self.timestamps.is_empty() {
             return 0;
         }
 
         // 1. Prepare the data
-        let mut dates: Vec<Date> = timestamps.iter().map(|dt| dt.date()).collect();
+        let mut dates: Vec<Date> = self.timestamps.iter().map(|dt| dt.date()).collect();
         dates.dedup();
 
         // 2. Identify our anchor points
@@ -89,11 +90,13 @@ impl Habit {
         count
     }
 
-    // this function should be tested
+    // this function should be tested for correctness
     pub fn last_30_days(&self) -> usize {
-        let timestamps = &self.timestamps;
         let month_ago: Date = helper::today() - Duration::DAY * 30;
-        timestamps.iter().filter(|dt| dt.date() > month_ago).count() // should it be >= ?
+        self.timestamps
+            .iter()
+            .filter(|dt| dt.date() > month_ago) // should it be >= ?
+            .count()
     }
 }
 

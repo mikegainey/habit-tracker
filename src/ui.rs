@@ -70,16 +70,15 @@ pub fn input(prompt: &str) -> String {
     input
 }
 
-pub fn input_number<T>(prompt: &str) -> T
-where
-    T: std::str::FromStr,
-    T::Err: std::fmt::Display,
-{
+pub fn choose_by_number(prompt: &str) -> usize {
     loop {
         let input = input(prompt);
         match input.parse() {
-            Ok(val) => return val,
             Err(e) => println!("Invalid input: {}", e),
+            Ok(val) => match val {
+                0 => print!("Invalid input: {}", val),
+                _ => return val,
+            },
         }
     }
 }

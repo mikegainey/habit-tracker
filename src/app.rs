@@ -19,7 +19,8 @@ impl App {
         &mut self.habits
     }
 
-    pub fn add_habit(&mut self, habit: Habit) {
+    pub fn add_habit(&mut self, name: String) {
+        let habit = Habit::new(name);
         self.habits.push(habit);
     }
 
