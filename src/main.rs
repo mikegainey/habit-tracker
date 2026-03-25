@@ -19,8 +19,8 @@ fn main() -> anyhow::Result<()> {
     };
 
     loop {
-        ui::clear_screen();
-        ui::list_habits(&app);
+        ui::clear_screen()?;
+        ui::list_habits(&app)?;
 
         ui::show_menu();
 

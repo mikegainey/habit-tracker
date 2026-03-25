@@ -58,7 +58,7 @@ fn mark_complete(app: &mut App) -> anyhow::Result<()> {
             return Ok(());
         }
     };
-    habit.mark_complete(helper::now());
+    habit.mark_complete(helper::now()?);
     Ok(())
 }
 

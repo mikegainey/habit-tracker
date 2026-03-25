@@ -1,9 +1,9 @@
 use time::{Date, OffsetDateTime};
 
-pub fn now() -> OffsetDateTime {
-    OffsetDateTime::now_local().unwrap() // I think this unwrap is okay
+pub fn now() -> anyhow::Result<OffsetDateTime> {
+    Ok(OffsetDateTime::now_local()?)
 }
 
-pub fn today() -> Date {
-    now().date()
+pub fn today() -> anyhow::Result<Date> {
+    Ok(now()?.date())
 }

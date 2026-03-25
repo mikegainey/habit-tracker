@@ -27,19 +27,19 @@ impl Habit {
             .any(|datetime| datetime.date() == date)
     }
 
-    pub fn done_today(&self) -> bool {
-        let today = helper::today();
-        self.check_date(today)
+    pub fn done_today(&self) -> anyhow::Result<bool> {
+        let today = helper::today()?;
+        Ok(self.check_date(today))
     }
 
     pub fn change_name(&mut self, new_name: String) {
         self.name = new_name
     }
 
-    // not used
-    // pub fn get_timestamps(&self) -> &[OffsetDateTime] {
-    //     &self.timestamps
-    // }
+    // not used for now
+    pub fn get_timestamps(&self) -> &[OffsetDateTime] {
+        &self.timestamps
+    }
 
     pub fn list_times(&self, date: Date) -> String {
         let format = format_description!("[hour]:[minute]");
@@ -56,9 +56,9 @@ impl Habit {
     //     self.timestamps.len() as u16
     // }
 
-    pub fn ending_streak(&self) -> usize {
+    pub fn ending_streak(&self) -> anyhow::Result<usize> {
         if self.timestamps.is_empty() {
-            return 0;
+            return Ok(0);
         }
 
         // 1. Prepare the data
@@ -66,7 +66,7 @@ impl Habit {
         dates.dedup();
 
         // 2. Identify our anchor points
-        let today = helper::today();
+        let today = helper::today()?;
         let yesterday = today - Duration::DAY;
 
         // 3. Determine the starting point of the walk
@@ -77,7 +77,7 @@ impl Habit {
             yesterday
         } else {
             // If the last entry was 2+ days ago, the streak is broken.
-            return 0;
+            return Ok(0);
         };
 
         // 4. Walk backward through the calendar
@@ -87,16 +87,17 @@ impl Habit {
             current_check -= Duration::DAY;
         }
 
-        count
+        Ok(count)
     }
 
     // this function should be tested for correctness
-    pub fn last_30_days(&self) -> usize {
-        let month_ago: Date = helper::today() - Duration::DAY * 30;
-        self.timestamps
+    pub fn last_30_days(&self) -> anyhow::Result<usize> {
+        let month_ago: Date = helper::today()? - Duration::DAY * 30;
+        Ok(self
+            .timestamps
             .iter()
             .filter(|dt| dt.date() > month_ago) // should it be >= ?
-            .count()
+            .count())
     }
 }
 

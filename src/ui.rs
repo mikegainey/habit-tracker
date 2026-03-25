@@ -4,16 +4,16 @@ use crate::helper;
 use colored::Colorize;
 use std::io::{self, Write};
 
-pub fn list_habits(app: &App) {
+pub fn list_habits(app: &App) -> anyhow::Result<()> {
     println!("{}", "======== List of Habits ========".cyan());
     println!("{}", "Done today:".cyan());
-    let today = helper::today();
+    let today = helper::today()?;
     let mut count = 0;
     for (index, habit) in app.get_habits().iter().enumerate() {
-        if habit.done_today() {
+        if habit.done_today()? {
             count += 1;
-            let streak = habit.ending_streak();
-            let last30days = habit.last_30_days();
+            let streak = habit.ending_streak()?;
+            let last30days = habit.last_30_days()?;
             println!(
                 "{}) {:30}  (streak: {})  (last 30 days: {})  (time: {})",
                 index + 1,
@@ -30,10 +30,10 @@ pub fn list_habits(app: &App) {
     println!("\n{}", "Not done today:".cyan());
     let mut count = 0;
     for (index, habit) in app.get_habits().iter().enumerate() {
-        if !habit.done_today() {
+        if !habit.done_today()? {
             count += 1;
-            let streak = habit.ending_streak();
-            let last30days = habit.last_30_days();
+            let streak = habit.ending_streak()?;
+            let last30days = habit.last_30_days()?;
             println!(
                 "{}) {:30}  (streak: {})  (last 30 days: {})",
                 index + 1,
@@ -47,6 +47,7 @@ pub fn list_habits(app: &App) {
         println!("(none)");
     }
     println!("{}", "================================".cyan());
+    Ok(())
 }
 
 pub fn show_menu() {
@@ -82,7 +83,8 @@ pub fn choose_by_number(prompt: &str) -> anyhow::Result<usize> {
 }
 
 // Clear screen and move cursor to home position (1,1)
-pub fn clear_screen() {
+pub fn clear_screen() -> anyhow::Result<()> {
     print!("\x1B[2J\x1B[1;1H");
-    std::io::Write::flush(&mut std::io::stdout()).unwrap();
+    std::io::Write::flush(&mut std::io::stdout())?;
+    Ok(())
 }
