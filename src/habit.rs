@@ -1,4 +1,3 @@
-use crate::helper;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use time::{Date, Duration, OffsetDateTime, macros::format_description};
@@ -21,24 +20,14 @@ impl Habit {
         self.timestamps.push(date);
     }
 
-    pub fn check_date(&self, date: Date) -> bool {
+    pub fn done_on_date(&self, date: Date) -> bool {
         self.timestamps
             .iter()
             .any(|datetime| datetime.date() == date)
     }
 
-    pub fn done_today(&self) -> anyhow::Result<bool> {
-        let today = helper::today()?;
-        Ok(self.check_date(today))
-    }
-
     pub fn change_name(&mut self, new_name: String) {
         self.name = new_name
-    }
-
-    // not used for now
-    pub fn get_timestamps(&self) -> &[OffsetDateTime] {
-        &self.timestamps
     }
 
     pub fn list_times(&self, date: Date) -> String {
@@ -51,22 +40,17 @@ impl Habit {
             .join(", ")
     }
 
-    // not used
-    // pub fn total_completions(&self) -> u16 {
-    //     self.timestamps.len() as u16
-    // }
-
-    pub fn ending_streak(&self) -> anyhow::Result<usize> {
+    pub fn ending_streak(&self, today: Date) -> usize {
         if self.timestamps.is_empty() {
-            return Ok(0);
+            return 0;
         }
 
         // 1. Prepare the data
         let mut dates: Vec<Date> = self.timestamps.iter().map(|dt| dt.date()).collect();
+        // The timestamps are pushed to self.timestamps in chronological order, and never reordered.
         dates.dedup();
 
         // 2. Identify our anchor points
-        let today = helper::today()?;
         let yesterday = today - Duration::DAY;
 
         // 3. Determine the starting point of the walk
@@ -77,7 +61,7 @@ impl Habit {
             yesterday
         } else {
             // If the last entry was 2+ days ago, the streak is broken.
-            return Ok(0);
+            return 0;
         };
 
         // 4. Walk backward through the calendar
@@ -87,17 +71,20 @@ impl Habit {
             current_check -= Duration::DAY;
         }
 
-        Ok(count)
+        count
     }
 
-    // this function should be tested for correctness
-    pub fn last_30_days(&self) -> anyhow::Result<usize> {
-        let month_ago: Date = helper::today()? - Duration::DAY * 30;
-        Ok(self
-            .timestamps
+    // Count the number of days with a completion in the last 30 days
+    pub fn last_30_days(&self, today: Date) -> usize {
+        let mut dates: Vec<Date> = self.timestamps.iter().map(|dt| dt.date()).collect();
+        // The timestamps are pushed to self.timestamps in chronological order, and never reordered.
+        dates.dedup();
+
+        let month_ago: Date = today - Duration::DAY * 30;
+        dates
             .iter()
-            .filter(|dt| dt.date() > month_ago) // should it be >= ?
-            .count())
+            .filter(|&&dt| dt > month_ago) // should it be >= ?
+            .count()
     }
 }
 

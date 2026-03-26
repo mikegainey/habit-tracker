@@ -15,8 +15,12 @@ impl App {
         &self.habits
     }
 
-    pub fn get_mut_habits(&mut self) -> &mut Vec<Habit> {
-        &mut self.habits
+    pub fn remove_habit(&mut self, index: usize) -> anyhow::Result<()> {
+        if index >= self.habits.len() {
+            anyhow::bail!("selection out of range: {}", index + 1);
+        }
+        self.habits.remove(index);
+        Ok(())
     }
 
     pub fn add_habit(&mut self, name: String) {

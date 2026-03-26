@@ -5,17 +5,17 @@ use colored::Colorize;
 use std::io::{self, Write};
 
 pub fn list_habits(app: &App) -> anyhow::Result<()> {
+    let today = helper::today()?;
     println!("{}", "======== List of Habits ========".cyan());
     println!("{}", "Done today:".cyan());
-    let today = helper::today()?;
     let mut count = 0;
     for (index, habit) in app.get_habits().iter().enumerate() {
-        if habit.done_today()? {
+        if habit.done_on_date(today) {
             count += 1;
-            let streak = habit.ending_streak()?;
-            let last30days = habit.last_30_days()?;
+            let streak = habit.ending_streak(today);
+            let last30days = habit.last_30_days(today);
             println!(
-                "{}) {:30}  (streak: {})  (last 30 days: {})  (time: {})",
+                "{}) {:30}  (streak: {:2})  (last 30 days: {:2})  (time: {})",
                 index + 1,
                 habit,
                 streak,
@@ -30,12 +30,12 @@ pub fn list_habits(app: &App) -> anyhow::Result<()> {
     println!("\n{}", "Not done today:".cyan());
     let mut count = 0;
     for (index, habit) in app.get_habits().iter().enumerate() {
-        if !habit.done_today()? {
+        if !habit.done_on_date(today) {
             count += 1;
-            let streak = habit.ending_streak()?;
-            let last30days = habit.last_30_days()?;
+            let streak = habit.ending_streak(today);
+            let last30days = habit.last_30_days(today);
             println!(
-                "{}) {:30}  (streak: {})  (last 30 days: {})",
+                "{}) {:30}  (streak: {:2})  (last 30 days: {:2})",
                 index + 1,
                 habit,
                 streak,
@@ -69,15 +69,14 @@ pub fn input(prompt: &str) -> anyhow::Result<String> {
     Ok(input)
 }
 
-pub fn choose_by_number(prompt: &str) -> anyhow::Result<usize> {
+pub fn choose_by_number(prompt: &str, len: usize) -> anyhow::Result<usize> {
     loop {
-        let input = input(prompt)?;
+        let input = input(prompt)?; // user input: 1-based
         match input.parse() {
             Err(e) => println!("Invalid input: {}", e),
-            Ok(val) => match val {
-                0 => print!("Invalid input: {}", val),
-                _ => return Ok(val),
-            },
+            Ok(0) => println!("Invalid input: 0"),
+            Ok(val) if val > len => println!("Invalid input: {}", val),
+            Ok(val) => return Ok(val - 1), // return value: 0-based
         }
     }
 }
@@ -85,6 +84,6 @@ pub fn choose_by_number(prompt: &str) -> anyhow::Result<usize> {
 // Clear screen and move cursor to home position (1,1)
 pub fn clear_screen() -> anyhow::Result<()> {
     print!("\x1B[2J\x1B[1;1H");
-    std::io::Write::flush(&mut std::io::stdout())?;
+    io::stdout().flush()?;
     Ok(())
 }
