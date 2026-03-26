@@ -74,3 +74,5 @@ fn remove_habit(app: &mut App) -> anyhow::Result<()> {
     let _ = app.remove_habit(index); // choose_by_number ensures the index returned is valid
     Ok(())
 }
+
+// todo: "view history" command -- last 30 days: just a list or a calendar-style grid
