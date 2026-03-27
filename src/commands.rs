@@ -56,6 +56,15 @@ pub fn do_command(app: &mut App, item: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn mark_complete(app: &mut App) -> anyhow::Result<()> {
+    let index = choose_habit(app, "\nSelect habit to mark complete (by number): ")?;
+    let habit = app
+        .get_mut_habit(index)
+        .ok_or(anyhow::anyhow!("index out of range"))?;
+    habit.mark_complete(helper::now()?);
+    Ok(())
+}
+
 fn add_habit(app: &mut App) -> anyhow::Result<()> {
     println!("\nAdd a habit:");
     let name = ui::input("name: ")?;
@@ -64,42 +73,14 @@ fn add_habit(app: &mut App) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn mark_complete(app: &mut App) -> anyhow::Result<()> {
-    let length = app.get_habits().len();
-    let index = ui::choose_by_number("\nSelect habit to mark complete (by number): ", length)?;
-    let habit = app
-        .get_mut_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
-    habit.mark_complete(helper::now()?);
-    Ok(())
-}
-
-// todo: add some color to the output; print the name of the habit
-fn habit_history(app: &mut App) -> anyhow::Result<()> {
-    let length = app.get_habits().len();
-    let index = ui::choose_by_number("\nSelect habit to view history (by number): ", length)?;
-    let habit = app
-        .get_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
-    println!("\n{}:\n", habit);
-
-    let days = 10;
-    let mut date = helper::today()? - Duration::DAY * (days - 1);
-    for _ in 0..days {
-        let done = match habit.done_on_date(date) {
-            true => "done",
-            false => "",
-        };
-        println!("{}: {}", date, done);
-        date = date + Duration::DAY;
-    }
-    ui::input("\nPress <Enter> to continue.")?;
+fn remove_habit(app: &mut App) -> anyhow::Result<()> {
+    let index = choose_habit(app, "\nSelect habit to remove (by number): ")?;
+    let _ = app.remove_habit(index); // choose_by_number ensures the index returned is valid
     Ok(())
 }
 
 fn change_name(app: &mut App) -> anyhow::Result<()> {
-    let length = app.get_habits().len();
-    let index = ui::choose_by_number("\nSelect habit to change name (by number): ", length)?;
+    let index = choose_habit(app, "\nSelect habit to change name (by number): ")?;
     let habit = app
         .get_mut_habit(index)
         .ok_or(anyhow::anyhow!("index out of range"))?;
@@ -108,26 +89,30 @@ fn change_name(app: &mut App) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn reset_completions(app: &mut App) -> anyhow::Result<()> {
-    let length = app.get_habits().len();
-    let index = ui::choose_by_number("\nSelect habit to delete completions (by number): ", length)?;
+// rework this to display in calendar format
+fn habit_history(app: &mut App) -> anyhow::Result<()> {
+    let index = choose_habit(app, "\nSelect habit to view history (by number): ")?;
     let habit = app
-        .get_mut_habit(index)
+        .get_habit(index)
         .ok_or(anyhow::anyhow!("index out of range"))?;
-    habit.delete_completions();
-    Ok(())
-}
 
-fn remove_habit(app: &mut App) -> anyhow::Result<()> {
-    let length = app.get_habits().len();
-    let index: usize = ui::choose_by_number("\nSelect habit to remove (by number): ", length)?;
-    let _ = app.remove_habit(index); // choose_by_number ensures the index returned is valid
+    println!("\n{}:\n", habit);
+    let days = 10;
+    let mut date = helper::today()? - Duration::DAY * (days - 1);
+    for _ in 0..days {
+        let done = match habit.done_on_date(date) {
+            true => "done",
+            false => "",
+        };
+        println!("{}: {}", date, done);
+        date += Duration::DAY;
+    }
+    ui::input("\nPress <Enter> to continue.")?;
     Ok(())
 }
 
 fn habit_chart(app: &mut App) -> anyhow::Result<()> {
-    let length = app.get_habits().len();
-    let index = ui::choose_by_number("\nSelect habit to view chart (by number): ", length)?;
+    let index = choose_habit(app, "\nSelect habit to view chart (by number): ")?;
     let habit = app
         .get_habit(index)
         .ok_or(anyhow::anyhow!("index out of range"))?;
@@ -180,6 +165,15 @@ fn habit_chart(app: &mut App) -> anyhow::Result<()> {
         println!();
     }
     ui::input("\nPress <Enter> to continue.")?;
+    Ok(())
+}
+
+fn reset_completions(app: &mut App) -> anyhow::Result<()> {
+    let index = choose_habit(app, "\nSelect habit to delete completions (by number): ")?;
+    let habit = app
+        .get_mut_habit(index)
+        .ok_or(anyhow::anyhow!("index out of range"))?;
+    habit.delete_completions();
     Ok(())
 }
 
