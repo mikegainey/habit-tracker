@@ -30,6 +30,10 @@ impl Habit {
         self.name = new_name
     }
 
+    pub fn delete_completions(&mut self) {
+        self.timestamps = Vec::new();
+    }
+
     pub fn list_times(&self, date: Date) -> String {
         let format = format_description!("[hour]:[minute]");
         self.timestamps
@@ -40,6 +44,7 @@ impl Habit {
             .join(", ")
     }
 
+    // written by ChatGPT
     pub fn ending_streak(&self, today: Date) -> usize {
         if self.timestamps.is_empty() {
             return 0;

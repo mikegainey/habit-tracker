@@ -28,6 +28,10 @@ impl App {
         self.habits.push(habit);
     }
 
+    pub fn get_habit(&mut self, index: usize) -> Option<&Habit> {
+        self.habits.get(index)
+    }
+
     pub fn get_mut_habit(&mut self, index: usize) -> Option<&mut Habit> {
         self.habits.get_mut(index)
     }

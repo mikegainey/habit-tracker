@@ -53,6 +53,10 @@ pub fn list_habits(app: &App) -> anyhow::Result<()> {
 pub fn show_menu() {
     println!("\n{}", "What do you want to do?".cyan());
     for cmd in COMMANDS {
+        if cmd.key.len() > 1 {
+            // hidden commands
+            continue;
+        }
         println!("{}) {}", cmd.key, cmd.desc);
     }
     println!("{}", "q) Quit this program".cyan());

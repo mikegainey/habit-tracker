@@ -1,13 +1,15 @@
 use crate::app::App;
 use crate::helper;
 use crate::ui;
+use colored::*;
+use time::Duration;
 
 pub struct Command {
     pub key: &'static str,
     pub desc: &'static str,
     action: fn(&mut App) -> Result<(), anyhow::Error>,
 }
-pub const COMMANDS: [Command; 4] = [
+pub const COMMANDS: [Command; 7] = [
     Command {
         key: "1",
         desc: "Mark a habit complete",
@@ -27,6 +29,21 @@ pub const COMMANDS: [Command; 4] = [
         key: "4",
         desc: "Change a habit name",
         action: change_name,
+    },
+    Command {
+        key: "5",
+        desc: "View habit history",
+        action: habit_history,
+    },
+    Command {
+        key: "6",
+        desc: "View habit 1-year chart",
+        action: habit_chart,
+    },
+    Command {
+        key: "rhc", // hidden command
+        desc: "Reset habit completions",
+        action: reset_completions,
     },
 ];
 
@@ -57,6 +74,29 @@ fn mark_complete(app: &mut App) -> anyhow::Result<()> {
     Ok(())
 }
 
+// todo: add some color to the output; print the name of the habit
+fn habit_history(app: &mut App) -> anyhow::Result<()> {
+    let length = app.get_habits().len();
+    let index = ui::choose_by_number("\nSelect habit to view history (by number): ", length)?;
+    let habit = app
+        .get_habit(index)
+        .ok_or(anyhow::anyhow!("index out of range"))?;
+    println!("\n{}:\n", habit);
+
+    let days = 10;
+    let mut date = helper::today()? - Duration::DAY * (days - 1);
+    for _ in 0..days {
+        let done = match habit.done_on_date(date) {
+            true => "done",
+            false => "",
+        };
+        println!("{}: {}", date, done);
+        date = date + Duration::DAY;
+    }
+    ui::input("\nPress <Enter> to continue.")?;
+    Ok(())
+}
+
 fn change_name(app: &mut App) -> anyhow::Result<()> {
     let length = app.get_habits().len();
     let index = ui::choose_by_number("\nSelect habit to change name (by number): ", length)?;
@@ -68,6 +108,16 @@ fn change_name(app: &mut App) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn reset_completions(app: &mut App) -> anyhow::Result<()> {
+    let length = app.get_habits().len();
+    let index = ui::choose_by_number("\nSelect habit to delete completions (by number): ", length)?;
+    let habit = app
+        .get_mut_habit(index)
+        .ok_or(anyhow::anyhow!("index out of range"))?;
+    habit.delete_completions();
+    Ok(())
+}
+
 fn remove_habit(app: &mut App) -> anyhow::Result<()> {
     let length = app.get_habits().len();
     let index: usize = ui::choose_by_number("\nSelect habit to remove (by number): ", length)?;
@@ -75,4 +125,66 @@ fn remove_habit(app: &mut App) -> anyhow::Result<()> {
     Ok(())
 }
 
-// todo: "view history" command -- last 30 days: just a list or a calendar-style grid
+fn habit_chart(app: &mut App) -> anyhow::Result<()> {
+    let length = app.get_habits().len();
+    let index = ui::choose_by_number("\nSelect habit to view chart (by number): ", length)?;
+    let habit = app
+        .get_habit(index)
+        .ok_or(anyhow::anyhow!("index out of range"))?;
+
+    println!("\n{}:\n", habit.to_string().bold());
+
+    let today = helper::today()?;
+    let days_since_monday = today.weekday().number_days_from_monday();
+    let first_monday = (today - Duration::days(days_since_monday as i64)) - Duration::weeks(51);
+
+    // --- PART 1: PRINT MONTH HEADERS ---
+    print!("    "); // Offset for "Mon " labels
+
+    let mut week = 0;
+    while week < 52 {
+        let monday = first_monday + Duration::weeks(week as i64);
+        let next_monday = monday + Duration::days(6);
+
+        // If the month changes within this week (the 1st is between Mon and Sun)
+        if monday.month() != next_monday.month() || monday.day() == 1 {
+            let month_name = next_monday.month().to_string();
+            let display_name = &month_name[..3]; // "Jan", "Feb", etc.
+
+            // The three-letter month plus an extra space takes up two weeks of the chart
+            print!("{} ", display_name.cyan());
+
+            // To keep the grid, we must skip the "next" week's space to compensate
+            // Calculation: Month(3) + 1 space = 4 chars (exactly 2 weeks of grid)
+            week += 2;
+        } else {
+            print!("  "); // Two spaces to match "■ "
+            week += 1;
+        }
+    }
+    println!();
+
+    // --- PART 2: PRINT THE GRID ---
+    let day_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    for day_index in 0..7 {
+        print!("{:3} ", day_labels[day_index].bright_black());
+        for week_index in 0..52 {
+            let current_date = first_monday + Duration::days((week_index * 7 + day_index) as i64);
+            let symbol = "■";
+            if habit.done_on_date(current_date) {
+                print!("{} ", symbol.truecolor(33, 191, 84));
+            } else {
+                print!("{} ", symbol.truecolor(60, 60, 60));
+            }
+        }
+        println!();
+    }
+    ui::input("\nPress <Enter> to continue.")?;
+    Ok(())
+}
+
+fn choose_habit(app: &mut App, prompt: &str) -> anyhow::Result<usize> {
+    let length = app.get_habits().len();
+    let index: usize = ui::choose_by_number(prompt, length)?;
+    Ok(index)
+}
