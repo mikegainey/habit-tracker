@@ -50,15 +50,15 @@ impl Habit {
             return 0;
         }
 
-        // 1. Prepare the data
+        // 1. Prepare the data.
         let mut dates: Vec<Date> = self.timestamps.iter().map(|dt| dt.date()).collect();
-        // The timestamps are pushed to self.timestamps in chronological order, and never reordered.
+        dates.sort();
         dates.dedup();
 
-        // 2. Identify our anchor points
+        // 2. Identify our anchor points.
         let yesterday = today - Duration::DAY;
 
-        // 3. Determine the starting point of the walk
+        // 3. Determine the starting point of the walk.
         // The streak is active if the most recent entry is Today OR Yesterday.
         let mut current_check = if dates.contains(&today) {
             today
@@ -69,7 +69,7 @@ impl Habit {
             return 0;
         };
 
-        // 4. Walk backward through the calendar
+        // 4. Walk backward through the calendar.
         let mut count = 0;
         while dates.contains(&current_check) {
             count += 1;
@@ -82,7 +82,7 @@ impl Habit {
     // number of days with a completion in a 30-day window ending today
     pub fn last_30_days(&self, today: Date) -> usize {
         let mut dates: Vec<Date> = self.timestamps.iter().map(|dt| dt.date()).collect();
-        // The timestamps are pushed to self.timestamps in chronological order, and never reordered.
+        dates.sort();
         dates.dedup();
 
         let month_ago: Date = today - Duration::DAY * 30;

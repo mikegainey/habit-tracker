@@ -31,7 +31,10 @@ fn main() -> anyhow::Result<()> {
             break;
         }
 
-        commands::do_command(&mut app, &item)?;
+        if let Err(e) = commands::do_command(&mut app, &item) {
+            eprintln!("Error: {}", e);
+            ui::input("Press <Enter> to continue...")?;
+        }
     }
 
     // save data to a file

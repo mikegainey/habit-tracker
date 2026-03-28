@@ -41,7 +41,7 @@ pub const COMMANDS: [Command; 7] = [
         action: habit_chart,
     },
     Command {
-        key: "rhc", // hidden command
+        key: "rhc", // len > 1 is a hidden command
         desc: "Reset habit completions",
         action: reset_completions,
     },
@@ -51,7 +51,8 @@ pub fn do_command(app: &mut App, item: &str) -> anyhow::Result<()> {
     if let Some(cmd) = COMMANDS.iter().find(|c| c.key == item) {
         (cmd.action)(app)?;
     } else {
-        println!("\nInvalid choice");
+        println!("\nInvalid choice: {}", item);
+        ui::input("\nPress <Enter> to continue.")?;
     }
     Ok(())
 }
@@ -75,7 +76,7 @@ fn add_habit(app: &mut App) -> anyhow::Result<()> {
 
 fn remove_habit(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to remove (by number): ")?;
-    let _ = app.remove_habit(index); // choose_by_number ensures the index returned is valid
+    app.remove_habit(index)?;
     Ok(())
 }
 
