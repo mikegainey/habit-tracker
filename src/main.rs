@@ -9,7 +9,7 @@ use anyhow::Context;
 use app::App;
 
 fn main() -> anyhow::Result<()> {
-    // load data from app_date.json, otherwise, create a new App
+    // load data from app_data.json, otherwise, create a new App
     let mut app = match storage::load_data() {
         Ok(app) => app,
         Err(err) => {

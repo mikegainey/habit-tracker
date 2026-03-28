@@ -54,7 +54,7 @@ pub fn show_menu() {
     println!("\n{}", "What do you want to do?".cyan());
     for cmd in COMMANDS {
         if cmd.key.len() > 1 {
-            // hidden commands
+            // commands of length > 1 are hidden commands
             continue;
         }
         println!("{}) {}", cmd.key, cmd.desc);

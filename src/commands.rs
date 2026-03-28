@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::helper;
 use crate::ui;
+use anyhow::Context;
 use colored::*;
 use time::Duration;
 
@@ -9,7 +10,7 @@ pub struct Command {
     pub desc: &'static str,
     action: fn(&mut App) -> Result<(), anyhow::Error>,
 }
-pub const COMMANDS: [Command; 7] = [
+pub const COMMANDS: [Command; 6] = [
     Command {
         key: "1",
         desc: "Mark a habit complete",
@@ -32,11 +33,6 @@ pub const COMMANDS: [Command; 7] = [
     },
     Command {
         key: "5",
-        desc: "View habit history",
-        action: habit_history,
-    },
-    Command {
-        key: "6",
         desc: "View habit 1-year chart",
         action: habit_chart,
     },
@@ -61,7 +57,8 @@ fn mark_complete(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to mark complete (by number): ")?;
     let habit = app
         .get_mut_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
+        .ok_or(anyhow::anyhow!("index out of range"))
+        .context("could not mark habit complete")?;
     habit.mark_complete(helper::now()?);
     Ok(())
 }
@@ -76,7 +73,7 @@ fn add_habit(app: &mut App) -> anyhow::Result<()> {
 
 fn remove_habit(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to remove (by number): ")?;
-    app.remove_habit(index)?;
+    app.remove_habit(index).context("could not remove habit")?;
     Ok(())
 }
 
@@ -84,31 +81,10 @@ fn change_name(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to change name (by number): ")?;
     let habit = app
         .get_mut_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
+        .ok_or(anyhow::anyhow!("index out of range"))
+        .context("could not change habit name")?;
     let new_name = ui::input("\nEnter the new name: ")?;
     habit.change_name(new_name);
-    Ok(())
-}
-
-// rework this to display in calendar format
-fn habit_history(app: &mut App) -> anyhow::Result<()> {
-    let index = choose_habit(app, "\nSelect habit to view history (by number): ")?;
-    let habit = app
-        .get_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
-
-    println!("\n{}:\n", habit);
-    let days = 10;
-    let mut date = helper::today()? - Duration::DAY * (days - 1);
-    for _ in 0..days {
-        let done = match habit.done_on_date(date) {
-            true => "done",
-            false => "",
-        };
-        println!("{}: {}", date, done);
-        date += Duration::DAY;
-    }
-    ui::input("\nPress <Enter> to continue.")?;
     Ok(())
 }
 
@@ -116,7 +92,8 @@ fn habit_chart(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to view chart (by number): ")?;
     let habit = app
         .get_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
+        .ok_or(anyhow::anyhow!("index out of range"))
+        .context("could not print habit chart")?;
 
     println!("\n{}:\n", habit.to_string().bold());
 
