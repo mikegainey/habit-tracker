@@ -55,11 +55,7 @@ pub fn do_command(app: &mut App, item: &str) -> anyhow::Result<()> {
 
 fn mark_complete(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to mark complete (by number): ")?;
-    let habit = app
-        .get_mut_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))
-        .context("could not mark habit complete")?;
-    habit.mark_complete(helper::now()?);
+    app.mark_habit_complete(index, helper::now()?)?;
     Ok(())
 }
 
@@ -79,12 +75,8 @@ fn remove_habit(app: &mut App) -> anyhow::Result<()> {
 
 fn change_name(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to change name (by number): ")?;
-    let habit = app
-        .get_mut_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))
-        .context("could not change habit name")?;
     let new_name = ui::input("\nEnter the new name: ")?;
-    habit.change_name(new_name);
+    app.change_name(index, new_name)?;
     Ok(())
 }
 
@@ -95,6 +87,8 @@ fn habit_chart(app: &mut App) -> anyhow::Result<()> {
         .ok_or(anyhow::anyhow!("index out of range"))
         .context("could not print habit chart")?;
 
+    ui::clear_screen()?;
+    ui::list_habits(app)?;
     println!("\n{}:\n", habit.to_string().bold());
 
     let today = helper::today()?;
@@ -148,10 +142,7 @@ fn habit_chart(app: &mut App) -> anyhow::Result<()> {
 
 fn reset_completions(app: &mut App) -> anyhow::Result<()> {
     let index = choose_habit(app, "\nSelect habit to delete completions (by number): ")?;
-    let habit = app
-        .get_mut_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))?;
-    habit.delete_completions();
+    app.reset_completions(index)?;
     Ok(())
 }
 

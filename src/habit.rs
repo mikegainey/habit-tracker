@@ -16,8 +16,8 @@ impl Habit {
         }
     }
 
-    pub fn mark_complete(&mut self, date: OffsetDateTime) {
-        self.timestamps.push(date);
+    pub fn mark_complete(&mut self, datetime: OffsetDateTime) {
+        self.timestamps.push(datetime);
     }
 
     pub fn done_on_date(&self, date: Date) -> bool {
@@ -30,7 +30,7 @@ impl Habit {
         self.name = new_name
     }
 
-    pub fn delete_completions(&mut self) {
+    pub fn reset_completions(&mut self) {
         self.timestamps = Vec::new();
     }
 
