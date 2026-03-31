@@ -1,14 +1,13 @@
-use crate::app::App;
+use crate::habit::Habit;
 use crate::helper;
 use crate::ui;
-use anyhow::Context;
 use colored::*;
 use time::Duration;
 
 pub struct Command {
     pub key: &'static str,
     pub desc: &'static str,
-    action: fn(&mut App) -> Result<(), anyhow::Error>,
+    action: fn(&mut Vec<Habit>) -> Result<(), anyhow::Error>,
 }
 pub const COMMANDS: [Command; 6] = [
     Command {
@@ -43,9 +42,9 @@ pub const COMMANDS: [Command; 6] = [
     },
 ];
 
-pub fn do_command(app: &mut App, item: &str) -> anyhow::Result<()> {
+pub fn do_command(habits: &mut Vec<Habit>, item: &str) -> anyhow::Result<()> {
     if let Some(cmd) = COMMANDS.iter().find(|c| c.key == item) {
-        (cmd.action)(app)?;
+        (cmd.action)(habits)?;
     } else {
         println!("\nInvalid choice: {}", item);
         ui::input("\nPress <Enter> to continue.")?;
@@ -53,45 +52,42 @@ pub fn do_command(app: &mut App, item: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn mark_complete(app: &mut App) -> anyhow::Result<()> {
-    let index = choose_habit(app, "\nSelect habit to mark complete (by number): ")?;
-    app.mark_habit_complete(index, helper::now()?)?;
+fn mark_complete(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    let index = choose_habit(habits, "\nSelect habit to mark complete (by number): ")?;
+    habits[index].mark_complete(helper::now());
     Ok(())
 }
 
-fn add_habit(app: &mut App) -> anyhow::Result<()> {
+fn add_habit(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
     println!("\nAdd a habit:");
     let name = ui::input("name: ")?;
-    app.add_habit(name);
+    habits.push(Habit::new(name));
     println!("habit added");
     Ok(())
 }
 
-fn remove_habit(app: &mut App) -> anyhow::Result<()> {
-    let index = choose_habit(app, "\nSelect habit to remove (by number): ")?;
-    app.remove_habit(index).context("could not remove habit")?;
+fn remove_habit(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    let index = choose_habit(habits, "\nSelect habit to remove (by number): ")?;
+    habits.remove(index);
     Ok(())
 }
 
-fn change_name(app: &mut App) -> anyhow::Result<()> {
-    let index = choose_habit(app, "\nSelect habit to change name (by number): ")?;
+fn change_name(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    let index = choose_habit(habits, "\nSelect habit to change name (by number): ")?;
     let new_name = ui::input("\nEnter the new name: ")?;
-    app.change_name(index, new_name)?;
+    habits[index].change_name(new_name);
     Ok(())
 }
 
-fn habit_chart(app: &mut App) -> anyhow::Result<()> {
-    let index = choose_habit(app, "\nSelect habit to view chart (by number): ")?;
-    let habit = app
-        .get_habit(index)
-        .ok_or(anyhow::anyhow!("index out of range"))
-        .context("could not print habit chart")?;
+fn habit_chart(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    let index = choose_habit(habits, "\nSelect habit to view chart (by number): ")?;
+    let habit = &habits[index];
 
     ui::clear_screen()?;
-    ui::list_habits(app)?;
+    ui::list_habits(habits)?;
     println!("\n{}:\n", habit.to_string().bold());
 
-    let today = helper::today()?;
+    let today = helper::today();
     let days_since_monday = today.weekday().number_days_from_monday();
     let first_monday = (today - Duration::days(days_since_monday as i64)) - Duration::weeks(51);
 
@@ -140,14 +136,14 @@ fn habit_chart(app: &mut App) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn reset_completions(app: &mut App) -> anyhow::Result<()> {
-    let index = choose_habit(app, "\nSelect habit to delete completions (by number): ")?;
-    app.reset_completions(index)?;
+fn reset_completions(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    let index = choose_habit(habits, "\nSelect habit to delete completions (by number): ")?;
+    habits[index].reset_completions();
     Ok(())
 }
 
-fn choose_habit(app: &mut App, prompt: &str) -> anyhow::Result<usize> {
-    let length = app.get_habits().len();
+fn choose_habit(habits: &mut [Habit], prompt: &str) -> anyhow::Result<usize> {
+    let length = habits.len();
     let index: usize = ui::choose_by_number(prompt, length)?;
     Ok(index)
 }

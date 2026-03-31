@@ -1,15 +1,15 @@
-use crate::app::App;
 use crate::commands::COMMANDS;
+use crate::habit::Habit;
 use crate::helper;
 use colored::Colorize;
 use std::io::{self, Write};
 
-pub fn list_habits(app: &App) -> anyhow::Result<()> {
-    let today = helper::today()?;
+pub fn list_habits(habits: &[Habit]) -> anyhow::Result<()> {
+    let today = helper::today();
     println!("{}", "======== List of Habits ========".cyan());
     println!("{}", "Done today:".cyan());
     let mut count = 0;
-    for (index, habit) in app.get_habits().iter().enumerate() {
+    for (index, habit) in habits.iter().enumerate() {
         if habit.done_on_date(today) {
             count += 1;
             let streak = habit.ending_streak(today);
@@ -29,7 +29,7 @@ pub fn list_habits(app: &App) -> anyhow::Result<()> {
     }
     println!("\n{}", "Not done today:".cyan());
     let mut count = 0;
-    for (index, habit) in app.get_habits().iter().enumerate() {
+    for (index, habit) in habits.iter().enumerate() {
         if !habit.done_on_date(today) {
             count += 1;
             let streak = habit.ending_streak(today);
