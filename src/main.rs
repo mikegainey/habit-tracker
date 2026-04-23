@@ -1,10 +1,10 @@
 pub mod commands;
+pub mod datetime;
 pub mod habit;
 pub mod helper;
 pub mod storage;
 pub mod ui;
 
-use anyhow::Context;
 use habit::Habit;
 
 fn main() -> anyhow::Result<()> {
@@ -37,7 +37,9 @@ fn main() -> anyhow::Result<()> {
     }
 
     // save data to a file
-    storage::save_data(&habits).context("Error: could not save app data")?;
+    if let Err(err) = storage::save_data(&habits) {
+        eprintln!("Error: could not save app data (Reason: {})", err);
+    }
 
     Ok(())
 }

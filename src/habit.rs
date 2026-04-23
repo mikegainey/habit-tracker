@@ -2,9 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use time::{Date, Duration, OffsetDateTime, macros::format_description};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Habit {
     name: String,
+    note: String,
+    #[serde(with = "crate::datetime")]
     timestamps: Vec<OffsetDateTime>,
 }
 
@@ -12,6 +14,7 @@ impl Habit {
     pub fn new(name: String) -> Habit {
         Habit {
             name,
+            note: String::new(),
             timestamps: Vec::new(),
         }
     }
@@ -20,18 +23,18 @@ impl Habit {
         self.timestamps.push(datetime);
     }
 
+    pub fn update_note(&mut self, note: String) {
+        self.note = note;
+    }
+
+    pub fn get_note(&self) -> &str {
+        &self.note
+    }
+
     pub fn done_on_date(&self, date: Date) -> bool {
         self.timestamps
             .iter()
             .any(|datetime| datetime.date() == date)
-    }
-
-    pub fn change_name(&mut self, new_name: String) {
-        self.name = new_name
-    }
-
-    pub fn reset_completions(&mut self) {
-        self.timestamps = Vec::new();
     }
 
     pub fn list_times(&self, date: Date) -> String {

@@ -9,7 +9,7 @@ pub struct Command {
     pub desc: &'static str,
     action: fn(&mut Vec<Habit>) -> Result<(), anyhow::Error>,
 }
-pub const COMMANDS: [Command; 6] = [
+pub const COMMANDS: [Command; 5] = [
     Command {
         key: "1",
         desc: "Mark a habit complete",
@@ -17,28 +17,23 @@ pub const COMMANDS: [Command; 6] = [
     },
     Command {
         key: "2",
+        desc: "Update progress note",
+        action: update_note,
+    },
+    Command {
+        key: "3",
         desc: "Add a habit",
         action: add_habit,
     },
     Command {
-        key: "3",
+        key: "4",
         desc: "Remove a habit",
         action: remove_habit,
-    },
-    Command {
-        key: "4",
-        desc: "Change a habit name",
-        action: change_name,
     },
     Command {
         key: "5",
         desc: "View habit 1-year chart",
         action: habit_chart,
-    },
-    Command {
-        key: "rhc", // len > 1 is a hidden command
-        desc: "Reset habit completions",
-        action: reset_completions,
     },
 ];
 
@@ -58,6 +53,13 @@ fn mark_complete(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn update_note(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    let index = choose_habit(habits, "\nSelect habit to update note (by number): ")?;
+    let note = ui::input("note (ex: p. 123, or 25lbs): ")?;
+    habits[index].update_note(note);
+    Ok(())
+}
+
 fn add_habit(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
     println!("\nAdd a habit:");
     let name = ui::input("name: ")?;
@@ -69,13 +71,6 @@ fn add_habit(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
 fn remove_habit(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
     let index = choose_habit(habits, "\nSelect habit to remove (by number): ")?;
     habits.remove(index);
-    Ok(())
-}
-
-fn change_name(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
-    let index = choose_habit(habits, "\nSelect habit to change name (by number): ")?;
-    let new_name = ui::input("\nEnter the new name: ")?;
-    habits[index].change_name(new_name);
     Ok(())
 }
 
@@ -133,12 +128,6 @@ fn habit_chart(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
         println!();
     }
     ui::input("\nPress <Enter> to continue.")?;
-    Ok(())
-}
-
-fn reset_completions(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
-    let index = choose_habit(habits, "\nSelect habit to delete completions (by number): ")?;
-    habits[index].reset_completions();
     Ok(())
 }
 

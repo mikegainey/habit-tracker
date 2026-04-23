@@ -15,12 +15,13 @@ pub fn list_habits(habits: &[Habit]) -> anyhow::Result<()> {
             let streak = habit.ending_streak(today);
             let last30days = habit.last_30_days(today);
             println!(
-                "{}) {:30}  (streak: {:2})  (last 30 days: {:2})  (time: {})",
+                "{}) {:30}  (strk: {:2}, 30d: {:2})  (time: {})  ({})",
                 index + 1,
                 habit,
                 streak,
                 last30days,
                 habit.list_times(today),
+                habit.get_note(),
             );
         }
     }
@@ -35,11 +36,12 @@ pub fn list_habits(habits: &[Habit]) -> anyhow::Result<()> {
             let streak = habit.ending_streak(today);
             let last30days = habit.last_30_days(today);
             println!(
-                "{}) {:30}  (streak: {:2})  (last 30 days: {:2})",
+                "{}) {:30}  (strk: {:2}, 30d: {:2})  ({})",
                 index + 1,
                 habit,
                 streak,
-                last30days
+                last30days,
+                habit.get_note(),
             )
         }
     }
