@@ -25,7 +25,6 @@ It's a command-line app that tracks daily habits. You can mark a habit complete,
 I used several external crates for the first time: time, serde, colored, and anyhow.
 
 To Do:
-- save app_data.toml in ~/local/habit-tracker/
 - save to a temp file, then, if successful, rename
 - variable habit frequency: every nth day, every Mon-Wed-Fri, etc.
 

@@ -1,24 +1,36 @@
 use crate::habit::Habit;
-use anyhow::Context;
+use anyhow::{Context, anyhow};
+use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AppData {
     habits: Vec<Habit>,
 }
 
-pub fn load_data() -> anyhow::Result<Vec<Habit>> {
-    let path = "app_data.toml";
-    let file =
-        File::open(path).with_context(|| format!("Failed to open app data file at {}", path))?;
-    let mut reader = BufReader::new(file);
+// For me, this is: /home/michael/.local/share/habit-tracker
+fn data_file_path() -> anyhow::Result<PathBuf> {
+    let proj_dirs = ProjectDirs::from("com", "Michael", "habit-tracker")
+        .ok_or_else(|| anyhow!("Could not determine an app data directory for this platform"))?;
 
-    let mut contents = String::new();
-    reader
-        .read_to_string(&mut contents)
-        .with_context(|| format!("Failed to read app data file at {}", path))?;
+    let data_dir = proj_dirs.data_local_dir();
+    fs::create_dir_all(data_dir)
+        .with_context(|| format!("Failed to create app data directory at {:?}", data_dir))?;
+
+    Ok(data_dir.join("app_data.toml"))
+}
+
+pub fn load_data() -> anyhow::Result<Vec<Habit>> {
+    let path = data_file_path()?;
+
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let contents = fs::read_to_string(&path)
+        .with_context(|| format!("Failed to read app data file at {:?}", &path))?;
 
     let data: AppData =
         toml::from_str(&contents).context("Failed to parse the TOML data into AppData")?;
@@ -28,17 +40,16 @@ pub fn load_data() -> anyhow::Result<Vec<Habit>> {
 
 // todo: Save to a temp file. If successful, rename to app_data.toml.
 pub fn save_data(habits: &[Habit]) -> anyhow::Result<()> {
-    let path = "app_data.toml";
-    let file = File::create(path)?;
-    let mut writer = BufWriter::new(file);
+    let path = data_file_path()?;
 
     let data = AppData {
         habits: habits.to_vec(),
     };
 
-    let toml_string = toml::to_string_pretty(&data)?;
-    writer.write_all(toml_string.as_bytes())?;
-    writer.flush()?;
+    let toml_string =
+        toml::to_string_pretty(&data).context("Failed to generate TOML data from &[Habit]")?;
+
+    fs::write(&path, &toml_string).with_context(|| format!("Failed to write {:?}", &path))?;
 
     Ok(())
 }

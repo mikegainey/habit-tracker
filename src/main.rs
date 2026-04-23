@@ -9,13 +9,7 @@ use habit::Habit;
 
 fn main() -> anyhow::Result<()> {
     // load data from app_data.json, otherwise, create a new App
-    let mut habits: Vec<Habit> = match storage::load_data() {
-        Ok(data) => data,
-        Err(err) => {
-            eprintln!("\nNotice: Starting with a fresh database (Reason: {})", err);
-            Vec::new()
-        }
-    };
+    let mut habits: Vec<Habit> = storage::load_data()?;
 
     loop {
         ui::clear_screen()?;
