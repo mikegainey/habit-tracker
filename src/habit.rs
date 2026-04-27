@@ -111,6 +111,7 @@ mod tests {
 
         let habit = Habit {
             name: "test".to_string(),
+            note: "note".to_string(),
             timestamps: vec![
                 // today: should count
                 datetime!(2026-03-26 08:00:00 +00:00),

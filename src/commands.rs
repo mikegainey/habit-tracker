@@ -1,5 +1,6 @@
 use crate::habit::Habit;
 use crate::helper;
+use crate::storage;
 use crate::ui;
 use colored::*;
 use time::Duration;
@@ -9,7 +10,7 @@ pub struct Command {
     pub desc: &'static str,
     action: fn(&mut Vec<Habit>) -> Result<(), anyhow::Error>,
 }
-pub const COMMANDS: [Command; 5] = [
+pub const COMMANDS: [Command; 6] = [
     Command {
         key: "1",
         desc: "Mark a habit complete",
@@ -34,6 +35,11 @@ pub const COMMANDS: [Command; 5] = [
         key: "5",
         desc: "View habit 1-year chart",
         action: habit_chart,
+    },
+    Command {
+        key: "6",
+        desc: "Edit habit data file",
+        action: edit_data_file,
     },
 ];
 
@@ -135,4 +141,22 @@ fn choose_habit(habits: &mut [Habit], prompt: &str) -> anyhow::Result<usize> {
     let length = habits.len();
     let index: usize = ui::choose_by_number(prompt, length)?;
     Ok(index)
+}
+
+fn edit_data_file(habits: &mut Vec<Habit>) -> anyhow::Result<()> {
+    // 1. Save current in-memory changes first,
+    // so the file reflects anything the user did before opening the editor.
+    storage::save_data(habits)?;
+
+    // 2. Open the file in the user's editor.
+    let path = storage::data_file_path()?;
+    edit::edit_file(&path)?;
+
+    // Note! If the user makes a bad edit (breaking TOML syntax),
+    // the following load_data will fail. The pre-edit app_data.toml will be preserved.
+
+    // 3. Reload from disk and replace the in-memory Vec.
+    *habits = storage::load_data()?;
+
+    Ok(())
 }

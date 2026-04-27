@@ -11,8 +11,8 @@ struct AppData {
 }
 
 // For me, this is: /home/michael/.local/share/habit-tracker
-fn data_file_path() -> anyhow::Result<PathBuf> {
-    let proj_dirs = ProjectDirs::from("com", "Michael", "habit-tracker")
+pub fn data_file_path() -> anyhow::Result<PathBuf> {
+    let proj_dirs = ProjectDirs::from("com", "mikegainey", "habit-tracker")
         .ok_or_else(|| anyhow!("Could not determine an app data directory for this platform"))?;
 
     let data_dir = proj_dirs.data_local_dir();
@@ -34,6 +34,9 @@ pub fn load_data() -> anyhow::Result<Vec<Habit>> {
 
     let data: AppData =
         toml::from_str(&contents).context("Failed to parse the TOML data into AppData")?;
+
+    // If the TOML can't be parsed (because of a bad user edit), reopen the editor
+    // letting the user fix it.
 
     Ok(data.habits)
 }
